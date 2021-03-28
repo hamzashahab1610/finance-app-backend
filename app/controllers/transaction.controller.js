@@ -1,4 +1,24 @@
 const Transactions = require("../models/transaction.model.js");
+const Accounts = require("../models/account.model.js");
+
+const updateBalance = (account_id, transaction_type, transaction_amount) => {
+	Accounts.find({ account_id: account_id }, function (err, result) {
+		if (err) throw err;
+		Accounts.update(
+			{ account_id: account_id },
+			{
+				balance:
+					transaction_type === "Invoice"
+						? result[0].balance + parseFloat(transaction_amount)
+						: transaction_type === "Credit" ||
+						  transaction_type === "Payment"
+						? result[0].balance - parseFloat(transaction_amount)
+						: result[0].balance + parseFloat(transaction_amount),
+			},
+		).exec();
+		console.log(result);
+	});
+};
 
 // Create and Save a new Transactions
 exports.create = (req, res) => {
@@ -23,6 +43,8 @@ exports.create = (req, res) => {
 		usd: req.body.usd,
 		notes: req.body.notes,
 	});
+
+	updateBalance(transaction.account_id, transaction.type, transaction.amount);
 
 	// Save Transactions in the database
 	transaction
@@ -93,6 +115,9 @@ exports.update = (req, res) => {
 	// }
 
 	// Find transaction and update it with the request body
+
+	updateBalance(req.body.account_id, req.body.type, req.body.amount);
+
 	Transactions.findByIdAndUpdate(
 		req.params.transactionId,
 		{

@@ -9,7 +9,7 @@ const TransactionSchema = mongoose.Schema(
 		ref_2: String,
 		account_name: String,
 		type: String,
-		amount: String,
+		amount: Number,
 		currency: String,
 		usd: String,
 		notes: String,
