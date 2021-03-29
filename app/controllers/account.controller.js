@@ -13,7 +13,7 @@ exports.create = (req, res) => {
 	const account = new Accounts({
 		account_id: req.body.account_id,
 		account_name: req.body.account_name,
-		balance: req.body.balance,
+		balance: 0,
 		current: req.body.current,
 		over_30: req.body.over_30,
 		over_60: req.body.over_60,

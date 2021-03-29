@@ -7,8 +7,11 @@ module.exports = (app) => {
 	// Retrieve all Notes
 	app.get("/api/transactions", transactions.findAll);
 
+	// Retrieve all Notes with accountId
+	app.post("/api/transactionsFilter", transactions.findAllByAccountId);
+
 	// Retrieve a single Note with transactionId
-	app.get("/api/transactions/:transactionId", transactions.findOne);
+	// app.get("/api/transactions/:transactionId", transactions.findOne);
 
 	// Update a Note with transactionId
 	app.patch("/api/transactions/:transactionId", transactions.update);

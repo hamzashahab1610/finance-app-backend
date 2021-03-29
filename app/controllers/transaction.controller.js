@@ -1,27 +1,47 @@
 const Transactions = require("../models/transaction.model.js");
 const Accounts = require("../models/account.model.js");
 
-const updateBalance = (account_id, transaction_type, transaction_amount) => {
-	Accounts.find({ account_id: account_id }, function (err, result) {
-		if (err) throw err;
-		Accounts.update(
-			{ account_id: account_id },
-			{
-				balance:
-					transaction_type === "Invoice"
-						? result[0].balance + parseFloat(transaction_amount)
-						: transaction_type === "Credit" ||
-						  transaction_type === "Payment"
-						? result[0].balance - parseFloat(transaction_amount)
-						: result[0].balance + parseFloat(transaction_amount),
-			},
-		).exec();
-		console.log(result);
+const updateBalance = async (
+	account_id,
+	transaction_type,
+	transaction_amount,
+) => {
+	var x;
+	const balance = await Accounts.find(
+		{ account_id: account_id },
+		function (err, result) {
+			if (err) throw err;
+			Accounts.update(
+				{ account_id: account_id },
+				{
+					balance:
+						transaction_type === "Invoice"
+							? result[0].balance + parseFloat(transaction_amount)
+							: transaction_type === "Credit" ||
+							  transaction_type === "Payment"
+							? result[0].balance - parseFloat(transaction_amount)
+							: result[0].balance +
+							  parseFloat(transaction_amount),
+				},
+			).exec();
+			x =
+				transaction_type === "Invoice"
+					? result[0].balance + parseFloat(transaction_amount)
+					: transaction_type === "Credit" ||
+					  transaction_type === "Payment"
+					? result[0].balance - parseFloat(transaction_amount)
+					: result[0].balance + parseFloat(transaction_amount);
+		},
+	).then(() => {
+		console.log("x", x);
+		return x;
 	});
+	console.log("balance", balance);
+	return balance;
 };
 
 // Create and Save a new Transactions
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
 	// // Validate request
 	// if (!req.body.content) {
 	// 	return res.status(400).send({
@@ -30,7 +50,8 @@ exports.create = (req, res) => {
 	// }
 
 	// Create a Transactions
-	const transaction = new Transactions({
+
+	var transaction = new Transactions({
 		transaction_id: req.body.transaction_id,
 		date: req.body.date,
 		account_id: req.body.account_id,
@@ -42,9 +63,14 @@ exports.create = (req, res) => {
 		currency: req.body.currency,
 		usd: req.body.usd,
 		notes: req.body.notes,
+		balance: await updateBalance(
+			req.body.account_id,
+			req.body.type,
+			req.body.amount,
+		),
 	});
 
-	updateBalance(transaction.account_id, transaction.type, transaction.amount);
+	console.log("transaction", transaction);
 
 	// Save Transactions in the database
 	transaction
@@ -72,6 +98,53 @@ exports.findAll = (req, res) => {
 				message:
 					err.message ||
 					"Some error occurred while retrieving Transactions.",
+			});
+		});
+};
+
+function getDate(date) {
+	return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+// Find all transactions with an accountid
+exports.findAllByAccountId = (req, res) => {
+	Transactions.find({ account_id: req.body.accountId })
+		.then((transaction) => {
+			if (!transaction) {
+				return res.status(404).send({
+					message:
+						"Transactions not found with id " +
+						req.params.accountId,
+				});
+			}
+
+			var startDate = new Date(req.body.startDate);
+			var endDate = new Date(req.body.endDate);
+
+			var result = transaction.filter(function (x) {
+				return (
+					getDate(x.date) >= getDate(startDate) &&
+					getDate(x.date) <= getDate(endDate)
+				);
+			});
+
+			console.log("result", result);
+			console.log("startDate", getDate(startDate));
+			console.log("endDate", getDate(endDate));
+
+			res.send(result);
+		})
+		.catch((err) => {
+			if (err.kind === "ObjectId") {
+				return res.status(404).send({
+					message:
+						"Transactions not found with id " + req.body.accountId,
+				});
+			}
+			return res.status(500).send({
+				message:
+					"Error retrieving transaction with id " +
+					req.body.accountId,
 			});
 		});
 };
