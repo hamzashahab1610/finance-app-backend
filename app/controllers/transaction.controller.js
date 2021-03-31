@@ -1,56 +1,9 @@
 const Transactions = require("../models/transaction.model.js");
 const Accounts = require("../models/account.model.js");
 
-const updateBalance = async (
-	account_id,
-	transaction_type,
-	transaction_amount,
-) => {
-	var x;
-	const balance = await Accounts.find(
-		{ account_id: account_id },
-		function (err, result) {
-			if (err) throw err;
-			Accounts.update(
-				{ account_id: account_id },
-				{
-					balance:
-						transaction_type === "Invoice"
-							? result[0].balance + parseFloat(transaction_amount)
-							: transaction_type === "Credit" ||
-							  transaction_type === "Payment"
-							? result[0].balance - parseFloat(transaction_amount)
-							: result[0].balance +
-							  parseFloat(transaction_amount),
-				},
-			).exec();
-			x =
-				transaction_type === "Invoice"
-					? result[0].balance + parseFloat(transaction_amount)
-					: transaction_type === "Credit" ||
-					  transaction_type === "Payment"
-					? result[0].balance - parseFloat(transaction_amount)
-					: result[0].balance + parseFloat(transaction_amount);
-		},
-	).then(() => {
-		console.log("x", x);
-		return x;
-	});
-	console.log("balance", balance);
-	return balance;
-};
-
 // Create and Save a new Transactions
 exports.create = async (req, res) => {
-	// // Validate request
-	// if (!req.body.content) {
-	// 	return res.status(400).send({
-	// 		message: "Transactions content can not be empty",
-	// 	});
-	// }
-
 	// Create a Transactions
-
 	var transaction = new Transactions({
 		transaction_id: req.body.transaction_id,
 		date: req.body.date,
@@ -63,14 +16,7 @@ exports.create = async (req, res) => {
 		currency: req.body.currency,
 		usd: req.body.usd,
 		notes: req.body.notes,
-		balance: await updateBalance(
-			req.body.account_id,
-			req.body.type,
-			req.body.amount,
-		),
 	});
-
-	console.log("transaction", transaction);
 
 	// Save Transactions in the database
 	transaction
@@ -88,18 +34,74 @@ exports.create = async (req, res) => {
 };
 
 // Retrieve and return all Transactions from the database.
-exports.findAll = (req, res) => {
-	Transactions.find()
-		.then((Transactions) => {
-			res.send(Transactions);
-		})
-		.catch((err) => {
-			res.status(500).send({
-				message:
-					err.message ||
-					"Some error occurred while retrieving Transactions.",
-			});
+exports.findAll = async (req, res) => {
+	let allTransactions = await Transactions.find();
+	let allAccounts = await Accounts.find();
+
+	//Sorts objects into ascending order of dates
+	allTransactions.sort(function (a, b) {
+		return new Date(a.date) - new Date(b.date);
+	});
+
+	var arr = [];
+
+	allAccounts.forEach((account) => {
+		var x = [];
+		allTransactions.forEach((transaction) => {
+			if (account.account_id === transaction.account_id) {
+				x.push(transaction);
+			}
 		});
+
+		arr.push(x);
+	});
+
+	console.log("arr", arr);
+
+	allAccounts.forEach((account, i) => {
+		var initialBalance = arr[i][0] && arr[i][0].amount;
+
+		arr[i].forEach((transaction, j) => {
+			if (transaction.account_id === account.account_id) {
+				if (j === 0) {
+					if (
+						transaction.type === "Credit" ||
+						transaction.type === "Payment"
+					) {
+						transaction.balance = -initialBalance;
+						initialBalance = -initialBalance;
+					} else {
+						transaction.balance = initialBalance;
+						initialBalance = initialBalance;
+					}
+				} else {
+					if (transaction.type === "Invoice") {
+						transaction.balance =
+							initialBalance + parseFloat(transaction.amount);
+						initialBalance =
+							initialBalance + parseFloat(transaction.amount);
+					}
+					if (
+						transaction.type === "Credit" ||
+						transaction.type === "Payment"
+					) {
+						transaction.balance =
+							initialBalance - parseFloat(transaction.amount);
+						initialBalance =
+							initialBalance - parseFloat(transaction.amount);
+					}
+					if (transaction.type === "Adjustment") {
+						transaction.balance =
+							initialBalance + parseFloat(transaction.amount);
+						initialBalance =
+							initialBalance + parseFloat(transaction.amount);
+					}
+				}
+			}
+		});
+	});
+
+	res.send(allTransactions);
 };
 
 function getDate(date) {
@@ -107,46 +109,27 @@ function getDate(date) {
 }
 
 // Find all transactions with an accountid
-exports.findAllByAccountId = (req, res) => {
-	Transactions.find({ account_id: req.body.accountId })
-		.then((transaction) => {
-			if (!transaction) {
-				return res.status(404).send({
-					message:
-						"Transactions not found with id " +
-						req.params.accountId,
-				});
-			}
+exports.findAllByAccountId = async (req, res) => {
+	if (req.body.startDate || req.body.endDate) {
+		var startDate = new Date(req.body.startDate);
+		var endDate = new Date(req.body.endDate);
+	}
 
-			var startDate = new Date(req.body.startDate);
-			var endDate = new Date(req.body.endDate);
+	let allTransactions = await Transactions.find({
+		account_id: req.body.accountId,
+	});
 
-			var result = transaction.filter(function (x) {
-				return (
-					getDate(x.date) >= getDate(startDate) &&
-					getDate(x.date) <= getDate(endDate)
-				);
-			});
+	var result = allTransactions;
 
-			console.log("result", result);
-			console.log("startDate", getDate(startDate));
-			console.log("endDate", getDate(endDate));
-
-			res.send(result);
-		})
-		.catch((err) => {
-			if (err.kind === "ObjectId") {
-				return res.status(404).send({
-					message:
-						"Transactions not found with id " + req.body.accountId,
-				});
-			}
-			return res.status(500).send({
-				message:
-					"Error retrieving transaction with id " +
-					req.body.accountId,
-			});
+	if (startDate || endDate)
+		result = allTransactions.filter(function (x) {
+			return (
+				getDate(x.date) >= getDate(startDate) &&
+				getDate(x.date) <= getDate(endDate)
+			);
 		});
+
+	res.send(result);
 };
 
 // Find a single transaction with a transactionId
@@ -180,17 +163,6 @@ exports.findOne = (req, res) => {
 
 // Update a transaction identified by the transactionId in the request
 exports.update = (req, res) => {
-	// Validate Request
-	// if (!req.body.content) {
-	// 	return res.status(400).send({
-	// 		message: "Transactions content can not be empty",
-	// 	});
-	// }
-
-	// Find transaction and update it with the request body
-
-	updateBalance(req.body.account_id, req.body.type, req.body.amount);
-
 	Transactions.findByIdAndUpdate(
 		req.params.transactionId,
 		{
