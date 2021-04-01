@@ -119,6 +119,50 @@ exports.findAllByAccountId = async (req, res) => {
 		account_id: req.body.accountId,
 	});
 
+	//Sorts objects into ascending order of dates
+	allTransactions.sort(function (a, b) {
+		return new Date(a.date) - new Date(b.date);
+	});
+
+	var initialBalance = allTransactions[0].amount;
+
+	allTransactions.forEach((transaction, j) => {
+		if (j === 0) {
+			if (
+				transaction.type === "Credit" ||
+				transaction.type === "Payment"
+			) {
+				transaction.balance = -initialBalance;
+				initialBalance = -initialBalance;
+			} else {
+				transaction.balance = initialBalance;
+				initialBalance = initialBalance;
+			}
+		} else {
+			if (transaction.type === "Invoice") {
+				transaction.balance =
+					initialBalance + parseFloat(transaction.amount);
+				initialBalance =
+					initialBalance + parseFloat(transaction.amount);
+			}
+			if (
+				transaction.type === "Credit" ||
+				transaction.type === "Payment"
+			) {
+				transaction.balance =
+					initialBalance - parseFloat(transaction.amount);
+				initialBalance =
+					initialBalance - parseFloat(transaction.amount);
+			}
+			if (transaction.type === "Adjustment") {
+				transaction.balance =
+					initialBalance + parseFloat(transaction.amount);
+				initialBalance =
+					initialBalance + parseFloat(transaction.amount);
+			}
+		}
+	});
+
 	var result = allTransactions;
 
 	if (startDate || endDate)
