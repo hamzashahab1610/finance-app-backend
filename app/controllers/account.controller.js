@@ -204,12 +204,12 @@ exports.update = (req, res) => {
 		{
 			account_id: req.body.account_id,
 			account_name: req.body.account_name,
-			balance: req.body.balance,
-			current: req.body.current,
-			over_30: req.body.over_30,
-			over_60: req.body.over_60,
-			over_90: req.body.over_90,
-			over_120: req.body.over_120,
+			// balance: req.body.balance,
+			// current: req.body.current,
+			// over_30: req.body.over_30,
+			// over_60: req.body.over_60,
+			// over_90: req.body.over_90,
+			// over_120: req.body.over_120,
 		},
 		{ new: true },
 	)
