@@ -7,6 +7,9 @@ module.exports = (app) => {
 	// Retrieve all Notes
 	app.get("/api/accounts", accounts.findAll);
 
+	// Retrieve all Account IDs
+	app.get("/api/accountIds", accounts.findAllAccountIds);
+
 	// Retrieve a single Note with accountId
 	app.get("/api/accounts/:accountId", accounts.findOne);
 

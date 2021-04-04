@@ -44,6 +44,8 @@ mongoose
 require("./app/routes/ad.routes.js")(app);
 require("./app/routes/account.routes.js")(app);
 require("./app/routes/transaction.routes.js")(app);
+require("./app/routes/currency.routes.js")(app);
+require("./app/routes/activity.routes.js")(app);
 
 // Set static folder
 app.use(express.static("build"));

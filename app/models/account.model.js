@@ -10,7 +10,8 @@ const AccountSchema = mongoose.Schema(
 		over_60: Number,
 		over_90: Number,
 		over_120: Number,
-		balance_details: Array,
+		// balance_details: Array,
+		transactions: Array,
 	},
 	{
 		timestamps: true,

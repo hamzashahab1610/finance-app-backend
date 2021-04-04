@@ -1,3 +1,5 @@
+const short = require("short-uuid");
+
 const Transactions = require("../models/transaction.model.js");
 const Accounts = require("../models/account.model.js");
 
@@ -5,7 +7,7 @@ const Accounts = require("../models/account.model.js");
 exports.create = async (req, res) => {
 	// Create a Transactions
 	var transaction = new Transactions({
-		transaction_id: req.body.transaction_id,
+		transaction_id: short.generate(),
 		date: req.body.date,
 		account_id: req.body.account_id,
 		ref_1: req.body.ref_1,
@@ -55,8 +57,6 @@ exports.findAll = async (req, res) => {
 
 		arr.push(x);
 	});
-
-	console.log("arr", arr);
 
 	allAccounts.forEach((account, i) => {
 		var initialBalance = arr[i][0] && arr[i][0].amount;
