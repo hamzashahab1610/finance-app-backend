@@ -1,13 +1,14 @@
-const short = require("short-uuid");
-
+const TransactionId = require("../models/transactionId.model.js");
 const Transactions = require("../models/transaction.model.js");
 const Accounts = require("../models/account.model.js");
 
 // Create and Save a new Transactions
 exports.create = async (req, res) => {
+	let transactionId = await TransactionId.find();
+
 	// Create a Transactions
 	var transaction = new Transactions({
-		transaction_id: short.generate(),
+		transaction_id: transactionId[0].transaction_id,
 		date: req.body.date,
 		account_id: req.body.account_id,
 		ref_1: req.body.ref_1,
@@ -19,6 +20,13 @@ exports.create = async (req, res) => {
 		usd: req.body.usd,
 		notes: req.body.notes,
 	});
+
+	TransactionId.findByIdAndUpdate(
+		{ _id: "606caf9ada32f303a03848df" },
+		{ transaction_id: transactionId[0].transaction_id + 1 },
+	).exec();
+
+	console.log("id", transactionId);
 
 	// Save Transactions in the database
 	transaction

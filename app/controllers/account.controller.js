@@ -72,63 +72,108 @@ exports.findAll = async (req, res) => {
 		var over_60 = 0;
 		var over_90 = 0;
 		var over_120 = 0;
+		var negativeTransactions = 0;
 
 		account.transactions.map((transaction) => {
 			var start_date = moment(transaction.date);
 			var end_date = moment();
 
-			if (end_date.diff(start_date, "days") < 30) {
+			if (
+				transaction.type === "Payment" ||
+				transaction.type === "Credit" ||
+				transaction.type === "Adjustment"
+			) {
 				if (
-					transaction.type === "Payment" ||
-					transaction.type === "Credit"
+					transaction.type === "Adjustment" &&
+					transaction.amount < 0
 				) {
-					current = current - transaction.amount;
-				} else {
-					current = current + transaction.amount;
-				}
+					negativeTransactions =
+						negativeTransactions - transaction.amount;
+				} else if (transaction.type !== "Adjustment")
+					negativeTransactions =
+						negativeTransactions + transaction.amount;
+			}
+
+			if (end_date.diff(start_date, "days") < 30) {
+				// if (
+				// 	transaction.type === "Payment" ||
+				// 	transaction.type === "Credit"
+				// ) {
+				// 	current = current - transaction.amount;
+				// } else
+				if (
+					transaction.type !== "Payment" &&
+					transaction.type !== "Credit"
+				)
+					current =
+						transaction.amount > 0 && current + transaction.amount;
 			}
 			if (
 				end_date.diff(start_date, "days") > 30 &&
 				end_date.diff(start_date, "days") < 60
 			) {
+				// if (
+				// 	transaction.type === "Payment" ||
+				// 	transaction.type === "Credit"
+				// ) {
+				// 	over_30 = over_30 - transaction.amount;
+				// } else
 				if (
-					transaction.type === "Payment" ||
-					transaction.type === "Credit"
-				) {
-					over_30 = over_30 - transaction.amount;
-				} else over_30 = over_30 + transaction.amount;
+					transaction.type !== "Payment" &&
+					transaction.type !== "Credit"
+				)
+					over_30 =
+						transaction.amount > 0 && over_30 + transaction.amount;
 			}
 			if (
 				end_date.diff(start_date, "days") > 60 &&
 				end_date.diff(start_date, "days") < 90
 			) {
+				// if (
+				// 	transaction.type === "Payment" ||
+				// 	transaction.type === "Credit"
+				// ) {
+				// 	over_60 = over_60 - transaction.amount;
+				// } else
 				if (
-					transaction.type === "Payment" ||
-					transaction.type === "Credit"
-				) {
-					over_60 = over_60 - transaction.amount;
-				} else over_60 = over_60 + transaction.amount;
+					transaction.type !== "Payment" &&
+					transaction.type !== "Credit"
+				)
+					over_60 =
+						transaction.amount > 0 && over_60 + transaction.amount;
 			}
 
 			if (
 				end_date.diff(start_date, "days") > 90 &&
 				end_date.diff(start_date, "days") < 120
 			) {
+				// if (
+				// 	transaction.type === "Payment" ||
+				// 	transaction.type === "Credit"
+				// ) {
+				// 	over_90 = over_90 - transaction.amount;
+				// } else
 				if (
-					transaction.type === "Payment" ||
-					transaction.type === "Credit"
-				) {
-					over_90 = over_90 - transaction.amount;
-				} else over_90 = over_90 + transaction.amount;
+					transaction.type !== "Payment" &&
+					transaction.type !== "Credit"
+				)
+					over_90 =
+						transaction.amount > 0 && over_90 + transaction.amount;
 			}
 
 			if (end_date.diff(start_date, "days") > 120) {
+				// if (
+				// 	transaction.type === "Payment" ||
+				// 	transaction.type === "Credit"
+				// ) {
+				// 	over_120 = over_120 - transaction.amount;
+				// } else
 				if (
-					transaction.type === "Payment" ||
-					transaction.type === "Credit"
-				) {
-					over_120 = over_120 - transaction.amount;
-				} else over_120 = over_120 + transaction.amount;
+					transaction.type !== "Payment" &&
+					transaction.type !== "Credit"
+				)
+					over_120 =
+						transaction.amount > 0 && over_120 + transaction.amount;
 			}
 		});
 
@@ -137,6 +182,60 @@ exports.findAll = async (req, res) => {
 		account.over_60 = over_60;
 		account.over_90 = over_90;
 		account.over_120 = over_120;
+		account.negativeTransactions = negativeTransactions;
+	});
+
+	console.log("allAccounts", allAccounts);
+
+	allAccounts.map((account) => {
+		if (account.over_120 < account.negativeTransactions) {
+			var x = account.over_120;
+			account.over_120 = 0;
+			account.negativeTransactions = account.negativeTransactions - x;
+			console.log("120", account.over_120, account.negativeTransactions);
+		} else if (account.over_120 > account.negativeTransactions) {
+			account.over_120 = account.over_120 - account.negativeTransactions;
+			account.negativeTransactions = 0;
+			console.log("120", account.over_120, account.negativeTransactions);
+		}
+
+		if (account.over_90 < account.negativeTransactions) {
+			var x = account.over_90;
+			account.over_90 = 0;
+			account.negativeTransactions = account.negativeTransactions - x;
+			console.log("90", account.over_90, account.negativeTransactions);
+		} else if (account.over_90 > account.negativeTransactions) {
+			account.over_90 = account.over_90 - account.negativeTransactions;
+			account.negativeTransactions = 0;
+			console.log("90", account.over_90, account.negativeTransactions);
+		}
+
+		if (account.over_60 < account.negativeTransactions) {
+			var x = account.over_60;
+			account.over_60 = 0;
+			account.negativeTransactions = account.negativeTransactions - x;
+			console.log("60", account.over_60, account.negativeTransactions);
+		} else if (account.over_60 > account.negativeTransactions) {
+			account.over_60 = account.over_60 - account.negativeTransactions;
+			account.negativeTransactions = 0;
+			console.log("60", account.over_60, account.negativeTransactions);
+		}
+
+		if (account.over_30 < account.negativeTransactions) {
+			var x = account.over_30;
+			account.over_30 = 0;
+			account.negativeTransactions = account.negativeTransactions - x;
+			console.log("30", account.over_30, account.negativeTransactions);
+		} else if (account.over_30 > account.negativeTransactions) {
+			account.over_30 = account.over_30 - account.negativeTransactions;
+			account.negativeTransactions = 0;
+			console.log("30", account.over_30, account.negativeTransactions);
+		}
+
+		account.current = account.current - account.negativeTransactions;
+		account.negativeTransactions =
+			account.negativeTransactions - account.current;
+		console.log("current", account.current, account.negativeTransactions);
 	});
 
 	allAccounts.map((account) => {
