@@ -185,57 +185,46 @@ exports.findAll = async (req, res) => {
 		account.negativeTransactions = negativeTransactions;
 	});
 
-	console.log("allAccounts", allAccounts);
-
 	allAccounts.map((account) => {
 		if (account.over_120 < account.negativeTransactions) {
 			var x = account.over_120;
 			account.over_120 = 0;
 			account.negativeTransactions = account.negativeTransactions - x;
-			console.log("120", account.over_120, account.negativeTransactions);
 		} else if (account.over_120 > account.negativeTransactions) {
 			account.over_120 = account.over_120 - account.negativeTransactions;
 			account.negativeTransactions = 0;
-			console.log("120", account.over_120, account.negativeTransactions);
 		}
 
 		if (account.over_90 < account.negativeTransactions) {
 			var x = account.over_90;
 			account.over_90 = 0;
 			account.negativeTransactions = account.negativeTransactions - x;
-			console.log("90", account.over_90, account.negativeTransactions);
 		} else if (account.over_90 > account.negativeTransactions) {
 			account.over_90 = account.over_90 - account.negativeTransactions;
 			account.negativeTransactions = 0;
-			console.log("90", account.over_90, account.negativeTransactions);
 		}
 
 		if (account.over_60 < account.negativeTransactions) {
 			var x = account.over_60;
 			account.over_60 = 0;
 			account.negativeTransactions = account.negativeTransactions - x;
-			console.log("60", account.over_60, account.negativeTransactions);
 		} else if (account.over_60 > account.negativeTransactions) {
 			account.over_60 = account.over_60 - account.negativeTransactions;
 			account.negativeTransactions = 0;
-			console.log("60", account.over_60, account.negativeTransactions);
 		}
 
 		if (account.over_30 < account.negativeTransactions) {
 			var x = account.over_30;
 			account.over_30 = 0;
 			account.negativeTransactions = account.negativeTransactions - x;
-			console.log("30", account.over_30, account.negativeTransactions);
 		} else if (account.over_30 > account.negativeTransactions) {
 			account.over_30 = account.over_30 - account.negativeTransactions;
 			account.negativeTransactions = 0;
-			console.log("30", account.over_30, account.negativeTransactions);
 		}
 
 		account.current = account.current - account.negativeTransactions;
 		account.negativeTransactions =
 			account.negativeTransactions - account.current;
-		console.log("current", account.current, account.negativeTransactions);
 	});
 
 	allAccounts.map((account) => {
@@ -266,7 +255,18 @@ exports.findAll = async (req, res) => {
 		over_120: total_over_120,
 	});
 
-	res.send(allAccounts);
+	res.send({
+		allAccounts,
+		// total: {
+		// 	account_name: "All Accounts",
+		// 	balance: total_balance,
+		// 	current: total_current,
+		// 	over_30: total_over_30,
+		// 	over_60: total_over_60,
+		// 	over_90: total_over_90,
+		// 	over_120: total_over_120,
+		// },
+	});
 };
 
 // Find a single account with a accountId

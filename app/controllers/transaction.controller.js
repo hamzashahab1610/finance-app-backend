@@ -116,6 +116,24 @@ function getDate(date) {
 	return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function getBalance(arr) {
+	var balance = 0;
+	arr.map((transaction) => {
+		if (
+			transaction.type === "Credit" ||
+			transaction.type === "Payment" ||
+			(transaction.type === "Adjustment" && transaction.amount < 0)
+		) {
+			balance = balance - Math.abs(transaction.amount);
+		} else {
+			balance = balance + Math.abs(transaction.amount);
+		}
+	});
+
+	console.log("balance", balance);
+	return balance;
+}
+
 // Find all transactions with an accountid
 exports.findAllByAccountId = async (req, res) => {
 	if (req.body.startDate || req.body.endDate) {
@@ -132,44 +150,11 @@ exports.findAllByAccountId = async (req, res) => {
 		return new Date(a.date) - new Date(b.date);
 	});
 
-	var initialBalance = allTransactions[0].amount;
+	console.log("all", allTransactions);
 
-	allTransactions.forEach((transaction, j) => {
-		if (j === 0) {
-			if (
-				transaction.type === "Credit" ||
-				transaction.type === "Payment"
-			) {
-				transaction.balance = -initialBalance;
-				initialBalance = -initialBalance;
-			} else {
-				transaction.balance = initialBalance;
-				initialBalance = initialBalance;
-			}
-		} else {
-			if (transaction.type === "Invoice") {
-				transaction.balance =
-					initialBalance + parseFloat(transaction.amount);
-				initialBalance =
-					initialBalance + parseFloat(transaction.amount);
-			}
-			if (
-				transaction.type === "Credit" ||
-				transaction.type === "Payment"
-			) {
-				transaction.balance =
-					initialBalance - parseFloat(transaction.amount);
-				initialBalance =
-					initialBalance - parseFloat(transaction.amount);
-			}
-			if (transaction.type === "Adjustment") {
-				transaction.balance =
-					initialBalance + parseFloat(transaction.amount);
-				initialBalance =
-					initialBalance + parseFloat(transaction.amount);
-			}
-		}
-	});
+	var balance = getBalance(allTransactions);
+
+	allTransactions.map((transaction) => (transaction.balance = balance));
 
 	var result = allTransactions;
 
